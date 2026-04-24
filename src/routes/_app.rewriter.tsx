@@ -196,6 +196,56 @@ function RewriterPage() {
                   <div className="text-xs text-muted-foreground italic border-t border-border pt-3">
                     {result.reasoning}
                   </div>
+
+                  {/* Approve & Push — manager only */}
+                  {isManager ? (
+                    <div className="border-t border-border pt-4 space-y-3">
+                      {pushSuccess && (
+                        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-success/10 border border-success/30 text-success text-xs">
+                          <Check className="size-4" />
+                          <span>Successfully pushed to Jira. Technician notified.</span>
+                          <a
+                            href={`https://bpmproject.atlassian.net/browse/${selected.key}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="ml-auto inline-flex items-center gap-1 hover:underline"
+                          >
+                            Open <ExternalLink className="size-3" />
+                          </a>
+                        </div>
+                      )}
+                      <button
+                        onClick={handleApprovePush}
+                        disabled={pushing || pushSuccess}
+                        className="w-full h-10 rounded-lg bg-gradient-to-r from-success to-success/80 text-success-foreground font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        {pushing ? (
+                          <>
+                            <Loader2 className="size-4 animate-spin" /> Pushing to Jira…
+                          </>
+                        ) : pushSuccess ? (
+                          <>
+                            <Check className="size-4" /> Pushed
+                          </>
+                        ) : (
+                          <>
+                            <Check className="size-4" /> Approve & Push to Jira
+                          </>
+                        )}
+                      </button>
+                      <p className="text-[10px] text-muted-foreground text-center">
+                        Updates ticket title, description, acceptance criteria & labels in real time.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="border-t border-border pt-4 flex items-start gap-2 p-2.5 rounded-lg bg-muted/40 text-xs text-muted-foreground">
+                      <AlertCircle className="size-4 shrink-0 mt-0.5" />
+                      <span>
+                        Only the <strong className="text-foreground">Maintenance Manager</strong> can
+                        approve and push AI suggestions to Jira.
+                      </span>
+                    </div>
+                  )}
                 </motion.div>
               )}
             </>
