@@ -51,7 +51,7 @@ function RiskPage() {
           Risk Radar
         </h1>
         <p className="text-sm text-muted-foreground mt-2 max-w-2xl">
-          Tickets stuck "En cours" likely to slip. Click <span className="text-primary">Why stuck?</span>{" "}
+          Tickets stuck "In Progress" likely to slip. Click <span className="text-primary">Why stuck?</span>{" "}
           to ask the AI for a root-cause analysis.
         </p>
       </header>
