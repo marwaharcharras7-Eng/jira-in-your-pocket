@@ -5,8 +5,14 @@
  *   - technician → sees only tickets assigned to their Jira accountId
  */
 import { createServerFn } from "@tanstack/react-start";
-import { searchIssues, type JiraIssue } from "../lib/jira";
-import { updateJiraIssue } from "../lib/jira-write";
+import {
+  fetchIssueDetail,
+  getIssueUrl,
+  searchIssues,
+  searchOpenIssuesWithSuggestions,
+  type JiraIssue,
+} from "../lib/jira";
+import { approveJiraSuggestions, updateJiraIssue } from "../lib/jira-write";
 import {
   computeHealth,
   findDuplicates,
@@ -47,6 +53,19 @@ async function resolveViewer(userId: string): Promise<Viewer> {
     jiraAccountId: profile?.jira_account_id ?? null,
     displayName: profile?.display_name ?? null,
   };
+}
+
+async function requireManagerRole(userId: string) {
+  const { data } = await supabaseAdmin
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("role", "manager")
+    .maybeSingle();
+
+  if (!data) {
+    throw new Error("Only managers can access this page");
+  }
 }
 
 /** Build the JQL clause based on viewer role. Manager sees all; technician sees own. */
@@ -221,6 +240,79 @@ export const getProblemTickets = createServerFn({ method: "GET" })
         viewer: { role: null, jiraAccountId: null, displayName: null } as Viewer,
         error: msg,
       };
+    }
+  });
+
+export const getManagerSuggestionTickets = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    try {
+      await requireManagerRole(context.userId);
+      const issues = await searchOpenIssuesWithSuggestions();
+      const suggestions = issues.filter(
+        (issue) =>
+          issue.fields.customfield_10371 ||
+          issue.fields.customfield_10372 ||
+          issue.fields.customfield_10452 ||
+          issue.fields.customfield_10383 ||
+          issue.fields.customfield_10453 != null ||
+          issue.fields.customfield_10376 != null,
+      );
+
+      return { issues: suggestions, error: null as string | null };
+    } catch (e) {
+      return {
+        issues: [] as JiraIssue[],
+        error: e instanceof Error ? e.message : "Failed to load suggestions",
+      };
+    }
+  });
+
+export const approveManagerSuggestion = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (data: {
+      key: string;
+      suggestedPriority?: string | null;
+      suggestedClassification?: string | null;
+      suggestedAssignee?: string | null;
+      suggestedSlaMinutes?: number | null;
+    }) => data,
+  )
+  .handler(async ({ context, data }) => {
+    try {
+      await requireManagerRole(context.userId);
+
+      const { data: profiles } = await supabaseAdmin
+        .from("profiles")
+        .select("id, display_name, email, jira_email, jira_account_id");
+
+      const normalizedAssignee = (data.suggestedAssignee ?? "").trim().toLowerCase();
+      const assigneeProfile = (profiles ?? []).find((profile) => {
+        const candidates = [
+          profile.display_name,
+          profile.email,
+          profile.jira_email,
+          profile.email?.split("@")[0],
+          profile.jira_email?.split("@")[0],
+        ]
+          .filter(Boolean)
+          .map((value) => value!.trim().toLowerCase());
+
+        return normalizedAssignee.length > 0 && candidates.includes(normalizedAssignee);
+      });
+
+      await approveJiraSuggestions({
+        key: data.key,
+        priorityName: data.suggestedPriority ?? null,
+        typeName: data.suggestedClassification ?? null,
+        assigneeAccountId: assigneeProfile?.jira_account_id ?? null,
+        slaTargetMinutes: data.suggestedSlaMinutes ?? null,
+      });
+
+      return { ok: true, error: null as string | null };
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : "Approval failed" };
     }
   });
 
@@ -503,8 +595,6 @@ export const getMyRole = createServerFn({ method: "GET" })
   });
 
 // ─── Notification details (Jira email-like view) ──────────────────────────
-
-import { fetchIssueDetail, getIssueUrl } from "../lib/jira";
 
 export const getIssueDetailForNotification = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
