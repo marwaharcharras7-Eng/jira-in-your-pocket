@@ -38,6 +38,10 @@ function BoardPage() {
         setIssues(r.issues);
         setError(r.error);
       })
+      .catch((e) => {
+        setIssues([]);
+        setError(e instanceof Error ? e.message : "Failed to load board");
+      })
       .finally(() => setLoading(false));
   }, []);
 

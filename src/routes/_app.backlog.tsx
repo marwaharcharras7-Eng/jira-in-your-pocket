@@ -36,6 +36,21 @@ function BacklogPage() {
         setData(p);
         setRecurring(r);
       })
+      .catch(() => {
+        setData({
+          vague: [],
+          misclassified: [],
+          stale: [],
+          viewer: { role: null, jiraAccountId: null, displayName: null },
+          error: "Failed to load backlog health",
+        });
+        setRecurring({
+          problems: [],
+          threshold: 3,
+          viewer: { role: null, jiraAccountId: null, displayName: null },
+          error: "Failed to load recurring problems",
+        });
+      })
       .finally(() => setLoading(false));
   }, []);
 

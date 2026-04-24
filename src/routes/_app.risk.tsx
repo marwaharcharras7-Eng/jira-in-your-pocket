@@ -21,6 +21,7 @@ function RiskPage() {
   useEffect(() => {
     getProblemTickets()
       .then((d) => setStale(d.stale))
+      .catch(() => setStale([]))
       .finally(() => setLoading(false));
   }, []);
 

@@ -18,6 +18,21 @@ function TeamPage() {
   useEffect(() => {
     getDashboardData()
       .then(setData)
+      .catch((e) => {
+        setData({
+          health: null,
+          duplicateGroups: 0,
+          recurringCount: 0,
+          recurringTotalTickets: 0,
+          machineStats: [],
+          assignees: [],
+          statusBreakdown: {},
+          typeBreakdown: {},
+          totalIssues: 0,
+          viewer: { role: null, jiraAccountId: null, displayName: null },
+          error: e instanceof Error ? e.message : "Failed to load team workload",
+        });
+      })
       .finally(() => setLoading(false));
   }, []);
 

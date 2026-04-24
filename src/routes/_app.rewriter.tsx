@@ -31,6 +31,7 @@ function RewriterPage() {
   useEffect(() => {
     getProblemTickets()
       .then((d) => setTickets([...d.vague, ...d.misclassified].slice(0, 30)))
+      .catch(() => setTickets([]))
       .finally(() => setLoading(false));
   }, []);
 
