@@ -80,6 +80,100 @@ function normalize(s: string): string {
     .trim();
 }
 
+// ─── RECURRING PROBLEMS ────────────────────────────────────────────────────
+// Detect recurring problems on the same machine using token-overlap heuristic.
+// Threshold: a "problem" is any cluster with ≥ MIN_RECURRENCE occurrences.
+
+export const MIN_RECURRENCE = 3;
+
+const STOPWORDS = new Set([
+  "the", "a", "an", "and", "or", "of", "to", "in", "on", "for", "with", "is",
+  "are", "was", "were", "be", "been", "being", "this", "that", "these", "those",
+  "it", "its", "as", "at", "by", "from", "we", "i", "our", "you", "your",
+  "le", "la", "les", "des", "de", "du", "et", "un", "une", "ou", "pour",
+  "sur", "dans", "avec", "qui", "que", "ce", "cette", "ces", "il", "ils",
+  "elle", "elles", "nous", "vous", "machine", "ticket", "issue", "problem",
+  "problème", "probleme", "test", "title", "rule", "corrective", "preventive",
+]);
+
+function keywords(s: string): Set<string> {
+  return new Set(
+    s
+      .toLowerCase()
+      .replace(/m0?\d{1,2}/gi, "")
+      .replace(/[^a-zà-ÿ0-9 ]/gi, " ")
+      .split(/\s+/)
+      .filter((w) => w.length >= 4 && !STOPWORDS.has(w)),
+  );
+}
+
+function jaccard(a: Set<string>, b: Set<string>): number {
+  if (a.size === 0 || b.size === 0) return 0;
+  let inter = 0;
+  for (const x of a) if (b.has(x)) inter++;
+  const union = a.size + b.size - inter;
+  return inter / union;
+}
+
+export type RecurringProblem = {
+  signature: string;
+  machine: string;
+  topTitle: string;
+  count: number;
+  issues: JiraIssue[];
+  keywords: string[];
+};
+
+export function findRecurringProblems(
+  issues: JiraIssue[],
+  minCount = MIN_RECURRENCE,
+): RecurringProblem[] {
+  // Group by machine first
+  const byMachine = new Map<string, JiraIssue[]>();
+  for (const i of issues) {
+    const m = machineFromText(i.fields.summary);
+    if (!m) continue; // recurring needs a machine context
+    if (!byMachine.has(m)) byMachine.set(m, []);
+    byMachine.get(m)!.push(i);
+  }
+
+  const clusters: RecurringProblem[] = [];
+  for (const [machine, arr] of byMachine.entries()) {
+    if (arr.length < minCount) continue;
+    const used = new Set<string>();
+    const tokens = arr.map((i) =>
+      keywords(`${i.fields.summary} ${i.fields.description ?? ""}`),
+    );
+    for (let i = 0; i < arr.length; i++) {
+      if (used.has(arr[i].id)) continue;
+      const group = [arr[i]];
+      const groupKw = new Set(tokens[i]);
+      used.add(arr[i].id);
+      for (let j = i + 1; j < arr.length; j++) {
+        if (used.has(arr[j].id)) continue;
+        if (jaccard(tokens[i], tokens[j]) >= 0.25) {
+          group.push(arr[j]);
+          for (const k of tokens[j]) groupKw.add(k);
+          used.add(arr[j].id);
+        }
+      }
+      if (group.length >= minCount) {
+        const sortedKw = Array.from(groupKw).slice(0, 6);
+        clusters.push({
+          signature: `${machine}:${sortedKw.slice(0, 3).join("-")}`,
+          machine,
+          topTitle: group[0].fields.summary,
+          count: group.length,
+          issues: group,
+          keywords: sortedKw,
+        });
+      }
+    }
+  }
+  // Sort by count desc
+  return clusters.sort((a, b) => b.count - a.count);
+}
+
 export function computeHealth(issues: JiraIssue[]): BacklogHealth {
   const total = issues.length || 1;
   let vagueDescriptions = 0;
