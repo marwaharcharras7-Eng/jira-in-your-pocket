@@ -15,6 +15,7 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
 import { Route as AppTeamRouteImport } from './routes/_app.team'
+import { Route as AppSuggestionsRouteImport } from './routes/_app.suggestions'
 import { Route as AppRiskRouteImport } from './routes/_app.risk'
 import { Route as AppRewriterRouteImport } from './routes/_app.rewriter'
 import { Route as AppDuplicatesRouteImport } from './routes/_app.duplicates'
@@ -51,6 +52,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
 const AppTeamRoute = AppTeamRouteImport.update({
   id: '/team',
   path: '/team',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSuggestionsRoute = AppSuggestionsRouteImport.update({
+  id: '/suggestions',
+  path: '/suggestions',
   getParentRoute: () => AppRoute,
 } as any)
 const AppRiskRoute = AppRiskRouteImport.update({
@@ -105,6 +111,7 @@ export interface FileRoutesByFullPath {
   '/duplicates': typeof AppDuplicatesRoute
   '/rewriter': typeof AppRewriterRoute
   '/risk': typeof AppRiskRoute
+  '/suggestions': typeof AppSuggestionsRoute
   '/team': typeof AppTeamRoute
   '/notifications/$key': typeof AppNotificationsKeyRoute
   '/api/public/jira-poll': typeof ApiPublicJiraPollRoute
@@ -119,6 +126,7 @@ export interface FileRoutesByTo {
   '/duplicates': typeof AppDuplicatesRoute
   '/rewriter': typeof AppRewriterRoute
   '/risk': typeof AppRiskRoute
+  '/suggestions': typeof AppSuggestionsRoute
   '/team': typeof AppTeamRoute
   '/': typeof AppIndexRoute
   '/notifications/$key': typeof AppNotificationsKeyRoute
@@ -136,6 +144,7 @@ export interface FileRoutesById {
   '/_app/duplicates': typeof AppDuplicatesRoute
   '/_app/rewriter': typeof AppRewriterRoute
   '/_app/risk': typeof AppRiskRoute
+  '/_app/suggestions': typeof AppSuggestionsRoute
   '/_app/team': typeof AppTeamRoute
   '/_app/': typeof AppIndexRoute
   '/_app/notifications/$key': typeof AppNotificationsKeyRoute
@@ -154,6 +163,7 @@ export interface FileRouteTypes {
     | '/duplicates'
     | '/rewriter'
     | '/risk'
+    | '/suggestions'
     | '/team'
     | '/notifications/$key'
     | '/api/public/jira-poll'
@@ -168,6 +178,7 @@ export interface FileRouteTypes {
     | '/duplicates'
     | '/rewriter'
     | '/risk'
+    | '/suggestions'
     | '/team'
     | '/'
     | '/notifications/$key'
@@ -184,6 +195,7 @@ export interface FileRouteTypes {
     | '/_app/duplicates'
     | '/_app/rewriter'
     | '/_app/risk'
+    | '/_app/suggestions'
     | '/_app/team'
     | '/_app/'
     | '/_app/notifications/$key'
@@ -240,6 +252,13 @@ declare module '@tanstack/react-router' {
       path: '/team'
       fullPath: '/team'
       preLoaderRoute: typeof AppTeamRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/suggestions': {
+      id: '/_app/suggestions'
+      path: '/suggestions'
+      fullPath: '/suggestions'
+      preLoaderRoute: typeof AppSuggestionsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/risk': {
@@ -308,6 +327,7 @@ interface AppRouteChildren {
   AppDuplicatesRoute: typeof AppDuplicatesRoute
   AppRewriterRoute: typeof AppRewriterRoute
   AppRiskRoute: typeof AppRiskRoute
+  AppSuggestionsRoute: typeof AppSuggestionsRoute
   AppTeamRoute: typeof AppTeamRoute
   AppIndexRoute: typeof AppIndexRoute
   AppNotificationsKeyRoute: typeof AppNotificationsKeyRoute
@@ -320,6 +340,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppDuplicatesRoute: AppDuplicatesRoute,
   AppRewriterRoute: AppRewriterRoute,
   AppRiskRoute: AppRiskRoute,
+  AppSuggestionsRoute: AppSuggestionsRoute,
   AppTeamRoute: AppTeamRoute,
   AppIndexRoute: AppIndexRoute,
   AppNotificationsKeyRoute: AppNotificationsKeyRoute,

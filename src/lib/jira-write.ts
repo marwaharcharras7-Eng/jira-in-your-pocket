@@ -76,3 +76,82 @@ export async function updateJiraIssue(opts: {
 
   return { ok: true };
 }
+
+/**
+ * Approve AI/ML suggestions for a ticket: write priority, type, assignee, SLA target,
+ * then transition the issue to "Scheduled".
+ */
+export async function approveJiraSuggestions(opts: {
+  key: string;
+  priorityName?: string | null;
+  typeName?: string | null; // "Corrective" | "Preventive"
+  assigneeAccountId?: string | null;
+  slaTargetMinutes?: number | null;
+}) {
+  const fields: Record<string, unknown> = {};
+
+  if (opts.priorityName) {
+    fields.priority = { name: opts.priorityName };
+  }
+  if (opts.typeName) {
+    fields.issuetype = { name: opts.typeName };
+  }
+  if (opts.assigneeAccountId) {
+    fields.assignee = { accountId: opts.assigneeAccountId };
+  }
+  if (opts.slaTargetMinutes != null) {
+    // Mirror to both SLA target fields used in the project
+    fields.customfield_10376 = opts.slaTargetMinutes;
+    fields.customfield_10453 = opts.slaTargetMinutes;
+  }
+
+  if (Object.keys(fields).length > 0) {
+    const res = await fetch(`${BASE_URL}/issue/${opts.key}`, {
+      method: "PUT",
+      headers: {
+        Authorization: authHeader(),
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ fields }),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      console.error("Jira approve fields error", res.status, text);
+      throw new Error(`Jira update failed (${res.status}): ${text.slice(0, 200)}`);
+    }
+  }
+
+  // Find a transition that lands on "Scheduled"
+  const txRes = await fetch(`${BASE_URL}/issue/${opts.key}/transitions`, {
+    headers: { Authorization: authHeader(), Accept: "application/json" },
+  });
+  if (!txRes.ok) {
+    throw new Error(`Failed to read transitions (${txRes.status})`);
+  }
+  const txData = (await txRes.json()) as {
+    transitions?: Array<{ id: string; name: string; to?: { name?: string } }>;
+  };
+  const target = (txData.transitions ?? []).find(
+    (t) => (t.to?.name ?? "").toLowerCase() === "scheduled",
+  );
+  if (!target) {
+    throw new Error('No transition to "Scheduled" available from current status');
+  }
+
+  const doTx = await fetch(`${BASE_URL}/issue/${opts.key}/transitions`, {
+    method: "POST",
+    headers: {
+      Authorization: authHeader(),
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ transition: { id: target.id } }),
+  });
+  if (!doTx.ok) {
+    const text = await doTx.text();
+    throw new Error(`Transition failed (${doTx.status}): ${text.slice(0, 200)}`);
+  }
+
+  return { ok: true };
+}

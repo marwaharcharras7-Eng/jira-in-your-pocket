@@ -10,6 +10,7 @@ import {
   Activity,
   Shield,
   Wrench,
+  BrainCircuit,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
@@ -20,6 +21,7 @@ const NAV = [
   { to: "/backlog", label: "Backlog", icon: Activity, roles: ["manager", "technician"] },
   { to: "/duplicates", label: "Duplicates", icon: Copy, roles: ["manager"] },
   { to: "/rewriter", label: "AI Rewriter", icon: Sparkles, roles: ["manager", "technician"] },
+  { to: "/suggestions", label: "AI Suggestions", icon: BrainCircuit, roles: ["manager"] },
   { to: "/risk", label: "Risk Radar", icon: AlertTriangle, roles: ["manager"] },
   { to: "/team", label: "Team Load", icon: Users, roles: ["manager"] },
   { to: "/chat", label: "Ask AI", icon: MessageSquare, roles: ["manager", "technician"] },
