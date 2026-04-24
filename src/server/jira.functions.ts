@@ -333,3 +333,87 @@ If the question cannot be answered from the data, say so.`;
       return { content: null, error: msg };
     }
   });
+
+// ─── MANAGER-ONLY: APPROVE & PUSH TO JIRA ──────────────────────────────────
+
+export const approveAndPushToJira = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (data: {
+      key: string;
+      summary: string;
+      description: string;
+      labels: string[];
+      acceptanceCriteria: string[];
+      assigneeAccountId?: string | null;
+      assigneeDisplayName?: string | null;
+    }) => data,
+  )
+  .handler(async ({ data, context }) => {
+    try {
+      // Verify caller is a manager
+      const { data: roleRow } = await supabaseAdmin
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", context.userId)
+        .eq("role", "manager")
+        .maybeSingle();
+
+      if (!roleRow) {
+        return { ok: false, error: "Only managers can approve and push to Jira" };
+      }
+
+      // Push to Jira
+      await updateJiraIssue({
+        key: data.key,
+        summary: data.summary,
+        description: data.description,
+        labels: data.labels,
+        acceptanceCriteria: data.acceptanceCriteria,
+      });
+
+      // Notify the assignee (technician) if mapped
+      if (data.assigneeAccountId) {
+        const { data: assigneeProfile } = await supabaseAdmin
+          .from("profiles")
+          .select("id")
+          .eq("jira_account_id", data.assigneeAccountId)
+          .maybeSingle();
+
+        if (assigneeProfile) {
+          await supabaseAdmin.from("notifications").insert({
+            user_id: assigneeProfile.id,
+            type: "suggestion_approved",
+            title: `Ticket ${data.key} updated`,
+            message: `Your manager approved an AI rewrite: ${data.summary.slice(0, 80)}`,
+            link: `https://bpmproject.atlassian.net/browse/${data.key}`,
+          });
+        }
+      }
+
+      // Self-notification (audit trail)
+      await supabaseAdmin.from("notifications").insert({
+        user_id: context.userId,
+        type: "info",
+        title: `Pushed ${data.key} to Jira`,
+        message: `Successfully updated "${data.summary.slice(0, 80)}"`,
+        link: `https://bpmproject.atlassian.net/browse/${data.key}`,
+      });
+
+      return { ok: true, error: null as string | null };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Push failed";
+      return { ok: false, error: msg };
+    }
+  });
+
+export const getMyRole = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    return { role: (data?.role as "manager" | "technician" | undefined) ?? null };
+  });
