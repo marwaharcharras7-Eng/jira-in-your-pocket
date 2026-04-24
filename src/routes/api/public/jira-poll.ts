@@ -59,7 +59,7 @@ type NotificationRow = {
   link: string;
   issue_key: string;
   event_id: string;
-  metadata: Record<string, unknown>;
+  metadata: any;
 };
 
 async function pollAndDispatch() {

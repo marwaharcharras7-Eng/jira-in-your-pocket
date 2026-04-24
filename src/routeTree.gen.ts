@@ -21,6 +21,7 @@ import { Route as AppDuplicatesRouteImport } from './routes/_app.duplicates'
 import { Route as AppChatRouteImport } from './routes/_app.chat'
 import { Route as AppBoardRouteImport } from './routes/_app.board'
 import { Route as AppBacklogRouteImport } from './routes/_app.backlog'
+import { Route as ApiPublicJiraPollRouteImport } from './routes/api/public/jira-poll'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -81,6 +82,11 @@ const AppBacklogRoute = AppBacklogRouteImport.update({
   path: '/backlog',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiPublicJiraPollRoute = ApiPublicJiraPollRouteImport.update({
+  id: '/api/public/jira-poll',
+  path: '/api/public/jira-poll',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/rewriter': typeof AppRewriterRoute
   '/risk': typeof AppRiskRoute
   '/team': typeof AppTeamRoute
+  '/api/public/jira-poll': typeof ApiPublicJiraPollRoute
 }
 export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
@@ -107,6 +114,7 @@ export interface FileRoutesByTo {
   '/risk': typeof AppRiskRoute
   '/team': typeof AppTeamRoute
   '/': typeof AppIndexRoute
+  '/api/public/jira-poll': typeof ApiPublicJiraPollRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -122,6 +130,7 @@ export interface FileRoutesById {
   '/_app/risk': typeof AppRiskRoute
   '/_app/team': typeof AppTeamRoute
   '/_app/': typeof AppIndexRoute
+  '/api/public/jira-poll': typeof ApiPublicJiraPollRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -137,6 +146,7 @@ export interface FileRouteTypes {
     | '/rewriter'
     | '/risk'
     | '/team'
+    | '/api/public/jira-poll'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/forgot-password'
@@ -150,6 +160,7 @@ export interface FileRouteTypes {
     | '/risk'
     | '/team'
     | '/'
+    | '/api/public/jira-poll'
   id:
     | '__root__'
     | '/_app'
@@ -164,6 +175,7 @@ export interface FileRouteTypes {
     | '/_app/risk'
     | '/_app/team'
     | '/_app/'
+    | '/api/public/jira-poll'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -171,6 +183,7 @@ export interface RootRouteChildren {
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ApiPublicJiraPollRoute: typeof ApiPublicJiraPollRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -259,6 +272,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBacklogRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/public/jira-poll': {
+      id: '/api/public/jira-poll'
+      path: '/api/public/jira-poll'
+      fullPath: '/api/public/jira-poll'
+      preLoaderRoute: typeof ApiPublicJiraPollRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -291,6 +311,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ApiPublicJiraPollRoute: ApiPublicJiraPollRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
