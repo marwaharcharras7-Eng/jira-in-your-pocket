@@ -25,6 +25,48 @@ type AuthContextValue = {
   refresh: () => Promise<void>;
 };
 
+type WindowWithServerFnPatch = Window & { __sfFetchPatched?: boolean };
+
+function installServerFnAuthFetchPatch() {
+  if (typeof window === "undefined") return;
+
+  const patchedWindow = window as WindowWithServerFnPatch;
+  if (patchedWindow.__sfFetchPatched) return;
+
+  patchedWindow.__sfFetchPatched = true;
+  const originalFetch = window.fetch.bind(window);
+
+  window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url =
+      typeof input === "string"
+        ? input
+        : input instanceof URL
+          ? input.toString()
+          : input.url;
+
+    if (url.includes("/_serverFn/")) {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+
+      if (token) {
+        const headers = new Headers(
+          init?.headers ?? (input instanceof Request ? input.headers : undefined),
+        );
+
+        if (!headers.has("authorization")) {
+          headers.set("authorization", `Bearer ${token}`);
+        }
+
+        return originalFetch(input, { ...init, headers });
+      }
+    }
+
+    return originalFetch(input, init);
+  };
+}
+
+installServerFnAuthFetchPatch();
+
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -40,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       supabase.from("user_roles").select("role").eq("user_id", uid).maybeSingle(),
     ]);
     setProfile((prof as Profile) ?? null);
-    setRole(((roleRow?.role as AppRole) ?? null));
+    setRole((roleRow?.role as AppRole) ?? null);
   }
 
   async function refresh() {
@@ -48,39 +90,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    // Patch fetch ONCE on the client to attach the Supabase access token
-    // to TanStack server function requests (/_serverFn/*).
-    if (typeof window !== "undefined" && !(window as unknown as { __sfFetchPatched?: boolean }).__sfFetchPatched) {
-      (window as unknown as { __sfFetchPatched: boolean }).__sfFetchPatched = true;
-      const originalFetch = window.fetch.bind(window);
-      window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-        const url =
-          typeof input === "string"
-            ? input
-            : input instanceof URL
-            ? input.toString()
-            : input.url;
-        if (url && url.includes("/_serverFn/")) {
-          const { data } = await supabase.auth.getSession();
-          const token = data.session?.access_token;
-          if (token) {
-            const headers = new Headers(init?.headers ?? (input instanceof Request ? input.headers : undefined));
-            if (!headers.has("authorization")) {
-              headers.set("authorization", `Bearer ${token}`);
-            }
-            return originalFetch(input, { ...init, headers });
-          }
-        }
-        return originalFetch(input, init);
-      };
-    }
-
-    // 1) listener first
     const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
       setSession(sess);
       setUser(sess?.user ?? null);
       if (sess?.user) {
-        // defer to avoid deadlock
         setTimeout(() => loadProfile(sess.user.id), 0);
       } else {
         setProfile(null);
@@ -88,7 +101,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    // 2) initial session
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setUser(data.session?.user ?? null);
