@@ -520,5 +520,17 @@ export const getIssueDetailForNotification = createServerFn({ method: "POST" })
       }
     }
 
-    return { detail, jiraUrl: getIssueUrl(data.key) };
+    // Strip non-serializable ADF body — keep only plain text
+    const safeDetail = {
+      ...detail,
+      comments: detail.comments.map((c) => ({
+        id: c.id,
+        author: c.author,
+        bodyText: c.bodyText ?? "",
+        created: c.created,
+        updated: c.updated,
+      })),
+    };
+
+    return { detail: safeDetail, jiraUrl: getIssueUrl(data.key) };
   });
