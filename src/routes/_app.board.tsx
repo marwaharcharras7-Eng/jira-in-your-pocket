@@ -12,14 +12,53 @@ export const Route = createFileRoute("/_app/board")({
   head: () => ({ meta: [{ title: "Board — AgileFlow AI" }] }),
 });
 
-// Synced with Jira workflow
-const COLUMNS: Array<{ name: string; color: string }> = [
-  { name: "Open", color: "oklch(0.68 0.18 220)" },
-  { name: "Scheduled", color: "oklch(0.72 0.14 280)" },
-  { name: "In Progress", color: "oklch(0.78 0.16 75)" },
-  { name: "In Review", color: "oklch(0.74 0.16 200)" },
-  { name: "Closed", color: "oklch(0.72 0.18 155)" },
-];
+type BoardColumn = {
+  key: string;
+  name: string;
+  order: number;
+  dotClass: string;
+};
+
+const SKELETON_COLUMNS = ["Open", "Scheduled", "In Progress", "In Review", "Closed"];
+
+function getBoardColumn(statusName: string, statusCategoryKey: string): BoardColumn {
+  const normalized = statusName.trim().toLowerCase();
+
+  if (
+    statusCategoryKey === "new" ||
+    /^(open|to do|todo|à faire|a faire|ouvert|ouverte)$/.test(normalized)
+  ) {
+    return { key: statusName, name: statusName, order: 0, dotClass: "bg-muted-foreground" };
+  }
+
+  if (/scheduled|planifi|programm/i.test(normalized)) {
+    return { key: statusName, name: statusName, order: 1, dotClass: "bg-primary" };
+  }
+
+  if (statusCategoryKey === "done" || /closed|done|termin|clôtur/i.test(normalized)) {
+    return { key: statusName, name: statusName, order: 4, dotClass: "bg-success" };
+  }
+
+  if (/review|pending review|en revue|validation|vérification/i.test(normalized)) {
+    return { key: statusName, name: statusName, order: 3, dotClass: "bg-accent-foreground" };
+  }
+
+  if (statusCategoryKey === "indeterminate" || /progress|cours|traitement/i.test(normalized)) {
+    return { key: statusName, name: statusName, order: 2, dotClass: "bg-warning" };
+  }
+
+  return {
+    key: statusName,
+    name: statusName,
+    order: statusCategoryKey === "done" ? 4 : statusCategoryKey === "indeterminate" ? 2 : 1,
+    dotClass:
+      statusCategoryKey === "done"
+        ? "bg-success"
+        : statusCategoryKey === "indeterminate"
+          ? "bg-warning"
+          : "bg-primary",
+  };
+}
 
 function BoardPage() {
   const { isManager } = useAuth();
@@ -64,6 +103,17 @@ function BoardPage() {
     const set = new Set<string>();
     issues.forEach((i) => set.add(i.fields.assignee?.displayName ?? "Unassigned"));
     return ["all", ...Array.from(set).sort()];
+  }, [issues]);
+
+  const columns = useMemo(() => {
+    const map = new Map<string, BoardColumn>();
+
+    issues.forEach((issue) => {
+      const column = getBoardColumn(issue.fields.status.name, issue.fields.status.statusCategory.key);
+      map.set(column.key, column);
+    });
+
+    return Array.from(map.values()).sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
   }, [issues]);
 
   const filtered = useMemo(() => {
@@ -132,14 +182,20 @@ function BoardPage() {
       )}
 
       {loading ? (
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 animate-pulse">
-          {COLUMNS.map((c) => (
-            <div key={c.name} className="h-96 bg-card border border-border rounded-xl" />
+        <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(240px,1fr))] animate-pulse">
+          {SKELETON_COLUMNS.map((name) => (
+            <div key={name} className="h-96 bg-card border border-border rounded-xl" />
           ))}
         </div>
+      ) : columns.length === 0 ? (
+        <div className="rounded-xl border border-border bg-card/40 p-10 text-center text-sm text-muted-foreground">
+          {isManager
+            ? "No Jira tickets were found for this board."
+            : "No Jira tickets are currently assigned to you."}
+        </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          {COLUMNS.map((col, idx) => {
+        <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(240px,1fr))]">
+          {columns.map((col, idx) => {
             const items = filtered.filter((i) => i.fields.status.name === col.name);
             return (
               <motion.div
@@ -151,11 +207,8 @@ function BoardPage() {
               >
                 <div className="flex items-center justify-between mb-3 px-1">
                   <div className="flex items-center gap-2">
-                    <span
-                      className="size-2 rounded-full"
-                      style={{ background: col.color, boxShadow: `0 0 8px ${col.color}` }}
-                    />
-                    <h2 className="text-xs font-semibold uppercase tracking-wider">{col.name}</h2>
+                    <span className={`size-2 rounded-full ${col.dotClass}`} />
+                    <h2 className="text-xs font-semibold tracking-wide">{col.name}</h2>
                   </div>
                   <span className="text-xs text-muted-foreground tabular-nums">{items.length}</span>
                 </div>
