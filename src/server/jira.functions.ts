@@ -625,3 +625,168 @@ export const getIssueDetailForNotification = createServerFn({ method: "POST" })
 
     return { detail: safeDetail, jiraUrl: getIssueUrl(data.key) };
   });
+
+// ─── MANAGER-ONLY: Per-technician performance KPIs ────────────────────────
+
+export type TechPerformance = {
+  accountId: string | null;
+  name: string;
+  avatar: string | null;
+  total: number;
+  open: number;
+  inProgress: number;
+  done: number;
+  highPriority: number;
+  staleInProgress: number;        // > 2 days "in progress"
+  reopens: number;                // count of times status moved from Done back to non-Done on assigned tickets
+  resolved: number;               // count of issues resolved (Done) by this assignee
+  slaTracked: number;             // resolved issues with an SLA target set
+  slaRespected: number;           // among slaTracked, those resolved within SLA window
+  slaRespectPct: number;          // 0..100
+  avgResolutionDays: number | null;
+  workloadIndex: number;          // open + inProgress weighted by priority/stale
+  performanceScore: number;       // 0..100, higher is better
+};
+
+function statusCategoryFromName(name: string): "todo" | "indeterminate" | "done" {
+  const n = name.toLowerCase();
+  if (["closed", "done", "resolved"].some((k) => n.includes(k))) return "done";
+  if (["progress", "review", "scheduled"].some((k) => n.includes(k))) return "indeterminate";
+  return "todo";
+}
+
+export const getTeamPerformance = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    try {
+      await requireManagerRole(context.userId);
+      const issues = await searchIssuesWithChangelog(300);
+
+      type Acc = TechPerformance & { _resolutionDaysSum: number };
+      const map = new Map<string, Acc>();
+
+      function ensure(key: string, name: string, avatar: string | null, accountId: string | null): Acc {
+        let entry = map.get(key);
+        if (!entry) {
+          entry = {
+            accountId,
+            name,
+            avatar,
+            total: 0,
+            open: 0,
+            inProgress: 0,
+            done: 0,
+            highPriority: 0,
+            staleInProgress: 0,
+            reopens: 0,
+            resolved: 0,
+            slaTracked: 0,
+            slaRespected: 0,
+            slaRespectPct: 0,
+            avgResolutionDays: null,
+            workloadIndex: 0,
+            performanceScore: 0,
+            _resolutionDaysSum: 0,
+          };
+          map.set(key, entry);
+        }
+        return entry;
+      }
+
+      for (const issue of issues) {
+        const a = issue.fields.assignee;
+        const key = a?.displayName ?? "Unassigned";
+        const entry = ensure(
+          key,
+          key,
+          a?.avatarUrls?.["32x32"] ?? null,
+          a?.accountId ?? null,
+        );
+
+        entry.total++;
+
+        const cat = statusCategoryFromName(issue.fields.status.name);
+        if (cat === "done") entry.done++;
+        else if (cat === "indeterminate") entry.inProgress++;
+        else entry.open++;
+
+        if (issue.fields.priority?.name === "High") entry.highPriority++;
+        if (cat === "indeterminate" && daysSince(issue.fields.updated) > 2) {
+          entry.staleInProgress++;
+        }
+
+        // Reopens — count status changes from Done -> not Done in changelog
+        const histories = issue.changelog?.histories ?? [];
+        for (const h of histories) {
+          for (const it of h.items ?? []) {
+            if (it.field === "status") {
+              const fromDone = statusCategoryFromName(it.fromString ?? "") === "done";
+              const toNotDone = statusCategoryFromName(it.toString ?? "") !== "done";
+              if (fromDone && toNotDone) entry.reopens++;
+            }
+          }
+        }
+
+        // SLA + resolution time on done tickets
+        const resolvedAt =
+          (issue.fields as unknown as { resolutiondate?: string | null }).resolutiondate ?? null;
+        if (cat === "done" && resolvedAt) {
+          entry.resolved++;
+          const created = new Date(issue.fields.created).getTime();
+          const done = new Date(resolvedAt).getTime();
+          const days = Math.max(0, (done - created) / 86400000);
+          entry._resolutionDaysSum += days;
+
+          const slaMinutes =
+            (issue.fields as unknown as { customfield_10453?: number | null })
+              .customfield_10453 ?? null;
+          if (typeof slaMinutes === "number" && slaMinutes > 0) {
+            entry.slaTracked++;
+            const elapsedMinutes = (done - created) / 60000;
+            if (elapsedMinutes <= slaMinutes) entry.slaRespected++;
+          }
+        }
+      }
+
+      // Finalize
+      const technicians = Array.from(map.values())
+        .filter((t) => t.name !== "Unassigned")
+        .map((t) => {
+          const slaPct = t.slaTracked > 0 ? (t.slaRespected / t.slaTracked) * 100 : 100;
+          const avgRes = t.resolved > 0 ? t._resolutionDaysSum / t.resolved : null;
+
+          // Workload (higher = more loaded). Open tickets weighted, +stale, +high prio.
+          const workloadIndex =
+            t.open * 1 + t.inProgress * 1.5 + t.highPriority * 1.2 + t.staleInProgress * 2;
+
+          // Performance score 0..100. Penalize reopens, stale, missed SLAs.
+          const completionRate = t.total > 0 ? t.done / t.total : 0;
+          const reopenRate = t.resolved > 0 ? t.reopens / t.resolved : 0;
+          const stalePenalty = t.inProgress > 0 ? t.staleInProgress / t.inProgress : 0;
+
+          const score =
+            slaPct * 0.45 +
+            completionRate * 100 * 0.3 +
+            (1 - Math.min(1, reopenRate)) * 100 * 0.15 +
+            (1 - Math.min(1, stalePenalty)) * 100 * 0.1;
+
+          const { _resolutionDaysSum, ...clean } = t;
+          void _resolutionDaysSum;
+          return {
+            ...clean,
+            slaRespectPct: Math.round(slaPct),
+            avgResolutionDays: avgRes !== null ? Math.round(avgRes * 10) / 10 : null,
+            workloadIndex: Math.round(workloadIndex * 10) / 10,
+            performanceScore: Math.max(0, Math.min(100, Math.round(score))),
+          } as TechPerformance;
+        })
+        .sort((a, b) => b.performanceScore - a.performanceScore);
+
+      return { technicians, error: null as string | null };
+    } catch (e) {
+      return {
+        technicians: [] as TechPerformance[],
+        error: e instanceof Error ? e.message : "Failed to load performance",
+      };
+    }
+  });
