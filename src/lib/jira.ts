@@ -43,6 +43,7 @@ export type JiraIssue = {
     customfield_10376?: number | null;
     customfield_10452?: string | null;
     customfield_10453?: number | null;
+    customfield_10454?: number | null; // Reopened_CM3 — count of times the ticket was reopened
   };
 };
 
@@ -277,6 +278,7 @@ export async function searchIssuesWithChangelog(maxResults = 200): Promise<
       ...DEFAULT_SEARCH_FIELDS,
       "customfield_10453",
       "customfield_10376",
+      "customfield_10454",
       "resolutiondate",
     ],
     expand: "changelog",

@@ -715,16 +715,13 @@ export const getTeamPerformance = createServerFn({ method: "GET" })
           entry.staleInProgress++;
         }
 
-        // Reopens — count status changes from Done -> not Done in changelog
-        const histories = issue.changelog?.histories ?? [];
-        for (const h of histories) {
-          for (const it of h.items ?? []) {
-            if (it.field === "status") {
-              const fromDone = statusCategoryFromName(it.fromString ?? "") === "done";
-              const toNotDone = statusCategoryFromName(it.toString ?? "") !== "done";
-              if (fromDone && toNotDone) entry.reopens++;
-            }
-          }
+        // Reopens — read from Jira custom field "Reopened_CM3" (customfield_10454).
+        // Falls back to 0 if the field is absent on the issue.
+        const reopenedCount =
+          (issue.fields as unknown as { customfield_10454?: number | null })
+            .customfield_10454 ?? 0;
+        if (typeof reopenedCount === "number" && reopenedCount > 0) {
+          entry.reopens += reopenedCount;
         }
 
         // SLA + resolution time on done tickets
