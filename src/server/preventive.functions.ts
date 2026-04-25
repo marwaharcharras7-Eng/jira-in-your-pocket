@@ -159,68 +159,8 @@ export const togglePreventivePlan = createServerFn({ method: "POST" })
     }
   });
 
-// ─── SCHEDULER (called by cron) ────────────────────────────────────────────
+// ─── SCHEDULER (called by cron) — implementation in ./preventive.server.ts
 
-/**
- * Find every active plan whose `next_run_at` <= now, create a Jira ticket,
- * then either advance `next_run_at` (recurring) or deactivate (one-shot).
- * Returns a small report. Safe to call multiple times.
- */
-export async function runDuePreventivePlans(now = new Date()) {
-  const { data, error } = await supabaseAdmin
-    .from("preventive_plans")
-    .select("*")
-    .eq("active", true)
-    .lte("next_run_at", now.toISOString());
-  if (error) throw error;
-
-  const plans = (data ?? []) as PreventivePlan[];
-  const created: Array<{ planId: string; jiraKey: string }> = [];
-  const failed: Array<{ planId: string; error: string }> = [];
-
-  for (const plan of plans) {
-    try {
-      const summary = `${plan.machine_id} - ${plan.title}`;
-      const { key } = await createJiraIssue({
-        summary,
-        description: plan.description ?? undefined,
-        machineId: plan.machine_id,
-        assigneeAccountId: plan.assignee_account_id,
-        issueType: "Preventive",
-      });
-
-      let nextRunIso: string | null = null;
-      let active = true;
-      if (periodIsZero(plan)) {
-        active = false; // one-shot
-      } else {
-        // Advance next_run from the previous next_run_at, not now, to keep cadence.
-        let next = advanceNextRun(new Date(plan.next_run_at), plan);
-        // If we missed multiple cycles, fast-forward past `now`.
-        while (next.getTime() <= now.getTime()) {
-          next = advanceNextRun(next, plan);
-        }
-        nextRunIso = next.toISOString();
-      }
-
-      await supabaseAdmin
-        .from("preventive_plans")
-        .update({
-          last_run_at: now.toISOString(),
-          occurrences_count: plan.occurrences_count + 1,
-          ...(nextRunIso ? { next_run_at: nextRunIso } : {}),
-          active,
-        })
-        .eq("id", plan.id);
-
-      created.push({ planId: plan.id, jiraKey: key });
-    } catch (e) {
-      failed.push({ planId: plan.id, error: e instanceof Error ? e.message : String(e) });
-    }
-  }
-
-  return { created, failed, scanned: plans.length };
-}
 
 /** Manual trigger for managers to run the scheduler from the UI (testing). */
 export const runPreventivePlansNow = createServerFn({ method: "POST" })
