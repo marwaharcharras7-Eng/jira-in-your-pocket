@@ -127,12 +127,17 @@ export async function searchOpenIssuesWithSuggestions(): Promise<JiraIssue[]> {
     100,
     [
       ...DEFAULT_SEARCH_FIELDS,
-      "customfield_10371",
-      "customfield_10372",
+      "duedate",
+      "customfield_10371", // ML_Priority CM3
+      "customfield_10372", // ML_Type_Ticket CM3
       "customfield_10383",
-      "customfield_10376",
-      "customfield_10452",
-      "customfield_10453",
+      "customfield_10376", // SLA_Target_Min CM3
+      "customfield_10452", // ML_Technician_Assigned_CM3
+      "customfield_10453", // ML_SLA_Target_Min_CM3
+      "customfield_10377", // Start_Time CM3
+      "customfield_10381", // ML Start-time CM3
+      "customfield_10382", // ML DUE DATE CM3
+      "customfield_10384", // machine_id CM3
     ],
   );
 }
