@@ -8,7 +8,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "../integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "../integrations/supabase/client.server";
-import { runDuePreventivePlans } from "./preventive.server";
+import { runDuePreventivePlans as runDuePreventivePlansImpl } from "./preventive.server";
 
 async function requireManagerRole(userId: string) {
   const { data } = await supabaseAdmin
@@ -168,7 +168,7 @@ export const runPreventivePlansNow = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     try {
       await requireManagerRole(context.userId);
-      const report = await runDuePreventivePlans();
+      const report = await runDuePreventivePlansImpl();
       return { ...report, error: null as string | null };
     } catch (e) {
       return {
