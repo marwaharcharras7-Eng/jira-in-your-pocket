@@ -77,6 +77,58 @@ export async function updateJiraIssue(opts: {
   return { ok: true };
 }
 
+const PROJECT_KEY = "CMV";
+
+/**
+ * Create a new Jira issue (used by the preventive scheduler).
+ * Issue type defaults to "Preventive". Returns the created issue key.
+ */
+export async function createJiraIssue(opts: {
+  summary: string;
+  description?: string;
+  machineId?: string;
+  assigneeAccountId?: string | null;
+  issueType?: string; // default "Preventive"
+  labels?: string[];
+}): Promise<{ key: string }> {
+  const fields: Record<string, unknown> = {
+    project: { key: PROJECT_KEY },
+    summary: opts.summary,
+    issuetype: { name: opts.issueType ?? "Preventive" },
+  };
+
+  const descParts: string[] = [];
+  if (opts.machineId) descParts.push(`Machine: ${opts.machineId}`);
+  if (opts.description) descParts.push(opts.description);
+  descParts.push(`\n— Auto-created by AgileFlow Preventive Scheduler`);
+  fields.description = textToAdf(descParts.join("\n\n"));
+
+  if (opts.assigneeAccountId) {
+    fields.assignee = { accountId: opts.assigneeAccountId };
+  }
+
+  const labels = ["preventive-systematic", ...(opts.labels ?? [])];
+  if (opts.machineId) labels.push(opts.machineId);
+  fields.labels = labels.map((l) => l.trim().replace(/\s+/g, "-"));
+
+  const res = await fetch(`${BASE_URL}/issue`, {
+    method: "POST",
+    headers: {
+      Authorization: authHeader(),
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ fields }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    console.error("Jira create error", res.status, text);
+    throw new Error(`Jira create failed (${res.status}): ${text.slice(0, 200)}`);
+  }
+  const data = (await res.json()) as { key: string };
+  return { key: data.key };
+}
+
 /**
  * Approve AI/ML suggestions for a ticket: write priority, type, assignee, SLA target,
  * then transition the issue to "Scheduled".

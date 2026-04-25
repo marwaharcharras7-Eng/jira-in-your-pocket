@@ -128,9 +128,14 @@ export function findRecurringProblems(
   issues: JiraIssue[],
   minCount = MIN_RECURRENCE,
 ): RecurringProblem[] {
+  // Recurring problems only apply to corrective tickets.
+  // Preventive systematic actions are *expected* to repeat by design.
+  const correctiveOnly = issues.filter(
+    (i) => !i.fields.issuetype.name.toLowerCase().includes("preventive"),
+  );
   // Group by machine first
   const byMachine = new Map<string, JiraIssue[]>();
-  for (const i of issues) {
+  for (const i of correctiveOnly) {
     const m = machineFromText(i.fields.summary);
     if (!m) continue; // recurring needs a machine context
     if (!byMachine.has(m)) byMachine.set(m, []);

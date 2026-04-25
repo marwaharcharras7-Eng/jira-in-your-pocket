@@ -56,6 +56,66 @@ export type Database = {
         }
         Relationships: []
       }
+      preventive_plans: {
+        Row: {
+          active: boolean
+          assignee_account_id: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          last_run_at: string | null
+          machine_id: string
+          next_run_at: string
+          occurrences_count: number
+          period_days: number
+          period_months: number
+          period_weeks: number
+          period_years: number
+          start_at: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          assignee_account_id?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          last_run_at?: string | null
+          machine_id: string
+          next_run_at: string
+          occurrences_count?: number
+          period_days?: number
+          period_months?: number
+          period_weeks?: number
+          period_years?: number
+          start_at: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          assignee_account_id?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          last_run_at?: string | null
+          machine_id?: string
+          next_run_at?: string
+          occurrences_count?: number
+          period_days?: number
+          period_months?: number
+          period_weeks?: number
+          period_years?: number
+          start_at?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
