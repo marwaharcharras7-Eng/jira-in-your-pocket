@@ -11,6 +11,7 @@ import {
   Shield,
   Wrench,
   BrainCircuit,
+  CalendarClock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
