@@ -176,19 +176,19 @@ function SuggestionsPage() {
                 <div className="grid grid-cols-2 gap-2.5">
                   <Suggestion
                     icon={Sparkles}
-                    label="ML Priority"
+                    label="Priority"
                     current={issue.fields.priority?.name ?? "—"}
                     suggested={issue.fields.customfield_10371}
                   />
                   <Suggestion
                     icon={Wrench}
-                    label="ML Classification"
+                    label="Issue Type"
                     current={issue.fields.issuetype.name}
                     suggested={issue.fields.customfield_10372}
                   />
                   <Suggestion
                     icon={UserCircle2}
-                    label="ML Assignee"
+                    label="Assignee"
                     current={issue.fields.assignee?.displayName ?? "Unassigned"}
                     suggested={
                       issue.fields.customfield_10452 ?? issue.fields.customfield_10383
@@ -196,7 +196,7 @@ function SuggestionsPage() {
                   />
                   <Suggestion
                     icon={Timer}
-                    label="ML SLA target"
+                    label="SLA Target (min)"
                     current="—"
                     suggested={
                       formatSla(
@@ -204,6 +204,30 @@ function SuggestionsPage() {
                       )
                     }
                   />
+                  <Suggestion
+                    icon={PlayCircle}
+                    label="Start Time"
+                    current="—"
+                    suggested={
+                      formatDateTime(
+                        issue.fields.customfield_10381 ?? issue.fields.customfield_10377,
+                      )
+                    }
+                  />
+                  <Suggestion
+                    icon={CalendarClock}
+                    label="Due Date"
+                    current={formatDate(issue.fields.duedate) ?? "—"}
+                    suggested={formatDate(issue.fields.customfield_10382)}
+                  />
+                  {issue.fields.customfield_10384 && (
+                    <Suggestion
+                      icon={Cpu}
+                      label="Machine"
+                      current="—"
+                      suggested={issue.fields.customfield_10384.toUpperCase()}
+                    />
+                  )}
                 </div>
 
                 {err && (
