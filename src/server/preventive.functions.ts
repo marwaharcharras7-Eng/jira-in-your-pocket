@@ -168,7 +168,7 @@ export const runPreventivePlansNow = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     try {
       await requireManagerRole(context.userId);
-      const report = await runDuePreventivePlans();
+      const report = await runDuePreventivePlansImpl();
       return { ...report, error: null as string | null };
     } catch (e) {
       return {
