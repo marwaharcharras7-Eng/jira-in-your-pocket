@@ -32,8 +32,24 @@ export function AppHeader() {
   }
 
   return (
-    <header className="h-14 border-b border-border bg-background/80 backdrop-blur-md sticky top-0 z-30 flex items-center justify-end gap-2 px-4">
-      <div className="flex items-center gap-2">
+    <header className="h-14 border-b border-border bg-background/80 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between gap-2 px-3 sm:px-4">
+      <div className="flex items-center gap-2 md:hidden">
+        <Sheet>
+          <SheetTrigger asChild>
+            <button
+              aria-label="Open menu"
+              className="size-9 inline-flex items-center justify-center rounded-md border border-border bg-card hover:bg-accent transition-all"
+            >
+              <Menu className="size-4" />
+            </button>
+          </SheetTrigger>
+          <SheetContent side="left" className="p-0 w-64 bg-sidebar border-r border-border">
+            <SidebarContent />
+          </SheetContent>
+        </Sheet>
+        <span className="text-sm font-semibold">AgileFlow</span>
+      </div>
+      <div className="flex items-center gap-2 ml-auto">
         <ThemeToggle />
         <NotificationBell />
         <DropdownMenu>
