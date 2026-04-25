@@ -3,9 +3,12 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   BrainCircuit,
+  CalendarClock,
   Check,
+  Cpu,
   ExternalLink,
   Loader2,
+  PlayCircle,
   ShieldAlert,
   Sparkles,
   Timer,
