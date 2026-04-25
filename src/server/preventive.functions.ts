@@ -8,7 +8,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "../integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "../integrations/supabase/client.server";
-import { createJiraIssue } from "../lib/jira-write";
+import { runDuePreventivePlans } from "./preventive.server";
 
 async function requireManagerRole(userId: string) {
   const { data } = await supabaseAdmin
@@ -38,27 +38,8 @@ export type PreventivePlan = {
   created_at: string;
 };
 
-/** Compute the next run timestamp by advancing `from` by the configured period. */
-export function advanceNextRun(
-  from: Date,
-  p: { period_days: number; period_weeks: number; period_months: number; period_years: number },
-): Date {
-  const d = new Date(from.getTime());
-  if (p.period_years) d.setUTCFullYear(d.getUTCFullYear() + p.period_years);
-  if (p.period_months) d.setUTCMonth(d.getUTCMonth() + p.period_months);
-  if (p.period_weeks) d.setUTCDate(d.getUTCDate() + p.period_weeks * 7);
-  if (p.period_days) d.setUTCDate(d.getUTCDate() + p.period_days);
-  return d;
-}
+// (advanceNextRun & runDuePreventivePlans live in ./preventive.server.ts)
 
-function periodIsZero(p: {
-  period_days: number;
-  period_weeks: number;
-  period_months: number;
-  period_years: number;
-}) {
-  return !p.period_days && !p.period_weeks && !p.period_months && !p.period_years;
-}
 
 // ─── LIST ──────────────────────────────────────────────────────────────────
 
@@ -178,68 +159,8 @@ export const togglePreventivePlan = createServerFn({ method: "POST" })
     }
   });
 
-// ─── SCHEDULER (called by cron) ────────────────────────────────────────────
+// ─── SCHEDULER (called by cron) — implementation in ./preventive.server.ts
 
-/**
- * Find every active plan whose `next_run_at` <= now, create a Jira ticket,
- * then either advance `next_run_at` (recurring) or deactivate (one-shot).
- * Returns a small report. Safe to call multiple times.
- */
-export async function runDuePreventivePlans(now = new Date()) {
-  const { data, error } = await supabaseAdmin
-    .from("preventive_plans")
-    .select("*")
-    .eq("active", true)
-    .lte("next_run_at", now.toISOString());
-  if (error) throw error;
-
-  const plans = (data ?? []) as PreventivePlan[];
-  const created: Array<{ planId: string; jiraKey: string }> = [];
-  const failed: Array<{ planId: string; error: string }> = [];
-
-  for (const plan of plans) {
-    try {
-      const summary = `${plan.machine_id} - ${plan.title}`;
-      const { key } = await createJiraIssue({
-        summary,
-        description: plan.description ?? undefined,
-        machineId: plan.machine_id,
-        assigneeAccountId: plan.assignee_account_id,
-        issueType: "Preventive",
-      });
-
-      let nextRunIso: string | null = null;
-      let active = true;
-      if (periodIsZero(plan)) {
-        active = false; // one-shot
-      } else {
-        // Advance next_run from the previous next_run_at, not now, to keep cadence.
-        let next = advanceNextRun(new Date(plan.next_run_at), plan);
-        // If we missed multiple cycles, fast-forward past `now`.
-        while (next.getTime() <= now.getTime()) {
-          next = advanceNextRun(next, plan);
-        }
-        nextRunIso = next.toISOString();
-      }
-
-      await supabaseAdmin
-        .from("preventive_plans")
-        .update({
-          last_run_at: now.toISOString(),
-          occurrences_count: plan.occurrences_count + 1,
-          ...(nextRunIso ? { next_run_at: nextRunIso } : {}),
-          active,
-        })
-        .eq("id", plan.id);
-
-      created.push({ planId: plan.id, jiraKey: key });
-    } catch (e) {
-      failed.push({ planId: plan.id, error: e instanceof Error ? e.message : String(e) });
-    }
-  }
-
-  return { created, failed, scanned: plans.length };
-}
 
 /** Manual trigger for managers to run the scheduler from the UI (testing). */
 export const runPreventivePlansNow = createServerFn({ method: "POST" })

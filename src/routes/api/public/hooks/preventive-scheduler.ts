@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { runDuePreventivePlans } from "@/server/preventive.functions";
+import { runDuePreventivePlans } from "@/server/preventive.server";
 
 /**
  * Public cron endpoint — called daily at 08:00 UTC by pg_cron.
