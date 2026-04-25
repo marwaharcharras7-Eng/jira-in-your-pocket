@@ -259,3 +259,49 @@ function toJqlDate(iso: string) {
   const pad = (n: number) => n.toString().padStart(2, "0");
   return `${d.getUTCFullYear()}/${pad(d.getUTCMonth() + 1)}/${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
 }
+
+/** Fetch CMV issues with changelog for performance analytics. */
+export async function searchIssuesWithChangelog(maxResults = 200): Promise<
+  Array<{
+    id: string;
+    key: string;
+    fields: JiraIssue["fields"] & { resolutiondate?: string | null };
+    changelog?: { histories?: ChangelogEntry[] };
+  }>
+> {
+  const url = `${BASE_URL}/search/jql`;
+  const body = {
+    jql: `project = CMV ORDER BY updated DESC`,
+    maxResults,
+    fields: [
+      ...DEFAULT_SEARCH_FIELDS,
+      "customfield_10453",
+      "customfield_10376",
+      "resolutiondate",
+    ],
+    expand: "changelog",
+  };
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: authHeader(),
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const txt = await res.text();
+    console.error("Jira changelog search error", res.status, txt);
+    throw new Error(`Jira search failed (${res.status})`);
+  }
+  const data = (await res.json()) as {
+    issues?: Array<{
+      id: string;
+      key: string;
+      fields: JiraIssue["fields"] & { resolutiondate?: string | null };
+      changelog?: { histories?: ChangelogEntry[] };
+    }>;
+  };
+  return data.issues ?? [];
+}
