@@ -289,6 +289,7 @@ export async function searchIssuesWithChangelog(maxResults = 200): Promise<
       "customfield_10453",
       "customfield_10376",
       "customfield_10454",
+      "customfield_10232", // Reopened (select TRUE/FALSE)
       "resolutiondate",
     ],
     expand: "changelog",
