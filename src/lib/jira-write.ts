@@ -78,6 +78,7 @@ export async function updateJiraIssue(opts: {
 }
 
 const PROJECT_KEY = "CMV";
+const AI_APPROVED_FIELD = "customfield_10457";
 
 /**
  * Create a new Jira issue (used by the preventive scheduler).
@@ -156,6 +157,9 @@ export async function approveJiraSuggestions(opts: {
     fields.customfield_10376 = opts.slaTargetMinutes;
     fields.customfield_10453 = opts.slaTargetMinutes;
   }
+
+  // Jira workflow condition for Open → Scheduled requires the AI approval flag.
+  fields[AI_APPROVED_FIELD] = [{ value: "TRUE" }];
 
   if (Object.keys(fields).length > 0) {
     const res = await fetch(`${BASE_URL}/issue/${opts.key}`, {
