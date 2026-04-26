@@ -7,7 +7,7 @@ import { getDuplicates } from "@/server/jira.functions";
 
 export const Route = createFileRoute("/_app/duplicates")({
   component: DuplicatesPage,
-  head: () => ({ meta: [{ title: "Duplicates — AgileFlow AI" }] }),
+  head: () => ({ meta: [{ title: "Duplicates — Jira in Your Pocket" }] }),
 });
 
 type Data = Awaited<ReturnType<typeof getDuplicates>>;

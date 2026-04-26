@@ -52,19 +52,19 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "AgileFlow AI — CMV Backlog Intelligence" },
+      { title: "Jira in Your Pocket — CMV Backlog Intelligence" },
       {
         name: "description",
         content:
           "AI-powered companion for the CMV maintenance Jira project. Backlog health, duplicate detection, ticket rewriting, risk radar.",
       },
-      { property: "og:title", content: "AgileFlow AI — CMV Backlog Intelligence" },
+      { property: "og:title", content: "Jira in Your Pocket — CMV Backlog Intelligence" },
       {
         property: "og:description",
         content: "AI-powered companion for your Jira maintenance backlog.",
       },
       { property: "og:type", content: "website" },
-      { name: "twitter:title", content: "AgileFlow AI — CMV Backlog Intelligence" },
+      { name: "twitter:title", content: "Jira in Your Pocket — CMV Backlog Intelligence" },
       { name: "description", content: "Jira Connect Plus integrates your Jira Kanban board with a custom web application for enhanced project management." },
       { property: "og:description", content: "Jira Connect Plus integrates your Jira Kanban board with a custom web application for enhanced project management." },
       { name: "twitter:description", content: "Jira Connect Plus integrates your Jira Kanban board with a custom web application for enhanced project management." },

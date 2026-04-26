@@ -6,7 +6,7 @@ import { getIssueDetailForNotification } from "@/server/jira.functions";
 
 export const Route = createFileRoute("/_app/notifications/$key")({
   component: NotificationDetailPage,
-  head: () => ({ meta: [{ title: "Notification — AgileFlow AI" }] }),
+  head: () => ({ meta: [{ title: "Notification — Jira in Your Pocket" }] }),
 });
 
 type Detail = Awaited<ReturnType<typeof getIssueDetailForNotification>>;

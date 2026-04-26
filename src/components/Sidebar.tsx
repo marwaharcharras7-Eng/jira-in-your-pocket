@@ -28,7 +28,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           A
         </div>
         <div className="flex flex-col leading-tight">
-          <span className="text-sm font-semibold text-foreground">AgileFlow</span>
+          <span className="text-sm font-semibold text-foreground">Jira in Your Pocket</span>
           <span className="text-[10px] uppercase tracking-wider text-muted-foreground">CMV · AI</span>
         </div>
       </Link>

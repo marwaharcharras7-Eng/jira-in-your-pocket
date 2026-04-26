@@ -49,7 +49,7 @@ export async function updateJiraIssue(opts: {
     if (opts.acceptanceCriteria && opts.acceptanceCriteria.length > 0) {
       body += `\n\nAcceptance Criteria:\n${opts.acceptanceCriteria.map((c) => `• ${c}`).join("\n")}`;
     }
-    body += `\n\n— Updated by AgileFlow AI`;
+    body += `\n\n— Updated by Jira in Your Pocket`;
     fields.description = textToAdf(body);
   }
 
@@ -101,7 +101,7 @@ export async function createJiraIssue(opts: {
   const descParts: string[] = [];
   if (opts.machineId) descParts.push(`Machine: ${opts.machineId}`);
   if (opts.description) descParts.push(opts.description);
-  descParts.push(`\n— Auto-created by AgileFlow Preventive Scheduler`);
+  descParts.push(`\n— Auto-created by Jira in Your Pocket Preventive Scheduler`);
   fields.description = textToAdf(descParts.join("\n\n"));
 
   if (opts.assigneeAccountId) {

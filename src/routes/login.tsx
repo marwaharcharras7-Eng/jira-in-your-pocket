@@ -8,7 +8,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
-  head: () => ({ meta: [{ title: "Sign in — AgileFlow AI" }] }),
+  head: () => ({ meta: [{ title: "Sign in — Jira in Your Pocket" }] }),
 });
 
 function LoginPage() {
@@ -97,7 +97,7 @@ function LoginPage() {
           <div className="inline-flex items-center justify-center size-12 rounded-xl bg-gradient-to-br from-primary to-primary/60 text-primary-foreground font-bold text-xl shadow-[0_0_30px_oklch(0.68_0.20_255_/_0.5)]">
             A
           </div>
-          <h1 className="mt-4 text-2xl font-bold tracking-tight">AgileFlow AI</h1>
+          <h1 className="mt-4 text-2xl font-bold tracking-tight">Jira in Your Pocket</h1>
           <p className="text-sm text-muted-foreground mt-1 flex items-center justify-center gap-1.5">
             <Sparkles className="size-3.5 text-primary" />
             CMV Maintenance Backlog Intelligence

@@ -14,7 +14,7 @@ import type { TechPerformance } from "@/server/jira.functions";
 
 export const Route = createFileRoute("/_app/team")({
   component: TeamPage,
-  head: () => ({ meta: [{ title: "Team Load — AgileFlow AI" }] }),
+  head: () => ({ meta: [{ title: "Team Load — Jira in Your Pocket" }] }),
 });
 
 type Data = Awaited<ReturnType<typeof getDashboardData>>;

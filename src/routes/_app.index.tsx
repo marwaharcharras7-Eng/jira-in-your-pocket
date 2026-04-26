@@ -29,7 +29,7 @@ import { getDashboardData } from "@/server/jira.functions";
 export const Route = createFileRoute("/_app/")({
   component: DashboardPage,
   head: () => ({
-    meta: [{ title: "Dashboard — AgileFlow AI" }],
+    meta: [{ title: "Dashboard — Jira in Your Pocket" }],
   }),
 });
 

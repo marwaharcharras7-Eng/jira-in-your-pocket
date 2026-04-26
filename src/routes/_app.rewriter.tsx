@@ -14,7 +14,7 @@ import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_app/rewriter")({
   component: RewriterPage,
-  head: () => ({ meta: [{ title: "AI Rewriter — AgileFlow AI" }] }),
+  head: () => ({ meta: [{ title: "AI Rewriter — Jira in Your Pocket" }] }),
 });
 
 function RewriterPage() {

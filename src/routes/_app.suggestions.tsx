@@ -25,7 +25,7 @@ import { getIssueUrl } from "@/lib/jira";
 
 export const Route = createFileRoute("/_app/suggestions")({
   component: SuggestionsPage,
-  head: () => ({ meta: [{ title: "AI Suggestions — AgileFlow AI" }] }),
+  head: () => ({ meta: [{ title: "AI Suggestions — Jira in Your Pocket" }] }),
 });
 
 type RowState = "idle" | "pushing" | "done" | "error";

@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/forgot-password")({
   component: ForgotPage,
-  head: () => ({ meta: [{ title: "Forgot password — AgileFlow AI" }] }),
+  head: () => ({ meta: [{ title: "Forgot password — Jira in Your Pocket" }] }),
 });
 
 function ForgotPage() {

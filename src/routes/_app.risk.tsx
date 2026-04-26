@@ -9,7 +9,7 @@ import type { JiraIssue } from "@/lib/jira";
 
 export const Route = createFileRoute("/_app/risk")({
   component: RiskPage,
-  head: () => ({ meta: [{ title: "Risk Radar — AgileFlow AI" }] }),
+  head: () => ({ meta: [{ title: "Risk Radar — Jira in Your Pocket" }] }),
 });
 
 function RiskPage() {

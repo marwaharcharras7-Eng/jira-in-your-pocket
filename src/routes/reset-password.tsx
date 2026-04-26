@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/reset-password")({
   component: ResetPage,
-  head: () => ({ meta: [{ title: "Reset password — AgileFlow AI" }] }),
+  head: () => ({ meta: [{ title: "Reset password — Jira in Your Pocket" }] }),
 });
 
 function ResetPage() {

@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_app/board")({
   component: BoardPage,
-  head: () => ({ meta: [{ title: "Board — AgileFlow AI" }] }),
+  head: () => ({ meta: [{ title: "Board — Jira in Your Pocket" }] }),
 });
 
 type BoardColumn = {

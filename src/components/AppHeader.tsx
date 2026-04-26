@@ -47,7 +47,7 @@ export function AppHeader() {
             <SidebarContent />
           </SheetContent>
         </Sheet>
-        <span className="text-sm font-semibold">AgileFlow</span>
+        <span className="text-sm font-semibold">Jira in Your Pocket</span>
       </div>
       <div className="flex items-center gap-2 ml-auto">
         <ThemeToggle />

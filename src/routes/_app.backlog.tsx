@@ -14,7 +14,7 @@ const searchSchema = z.object({
 export const Route = createFileRoute("/_app/backlog")({
   validateSearch: (s) => searchSchema.parse(s),
   component: BacklogPage,
-  head: () => ({ meta: [{ title: "Backlog Health — AgileFlow AI" }] }),
+  head: () => ({ meta: [{ title: "Backlog Health — Jira in Your Pocket" }] }),
 });
 
 type ProblemData = Awaited<ReturnType<typeof getProblemTickets>>;

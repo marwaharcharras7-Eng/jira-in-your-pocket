@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_app/chat")({
   component: ChatPage,
-  head: () => ({ meta: [{ title: "Ask AI — AgileFlow AI" }] }),
+  head: () => ({ meta: [{ title: "Ask AI — Jira in Your Pocket" }] }),
 });
 
 type Msg = { role: "user" | "assistant"; content: string };
