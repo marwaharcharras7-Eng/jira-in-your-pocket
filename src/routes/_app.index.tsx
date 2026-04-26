@@ -24,6 +24,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { ScoreRing } from "@/components/ScoreRing";
+import { ExportAuditButton } from "@/components/ExportAuditButton";
 import { getDashboardData } from "@/server/jira.functions";
 
 export const Route = createFileRoute("/_app/")({
