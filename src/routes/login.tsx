@@ -17,6 +17,7 @@ function LoginPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [signupRole, setSignupRole] = useState<"manager" | "technician">("technician");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -38,15 +39,31 @@ function LoginPage() {
         const { error: err } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${window.location.origin}/` },
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+            data: { selected_role: signupRole },
+          },
         });
         if (err) throw err;
         // auto-confirm enabled → session is active
         const { data: sess } = await supabase.auth.getSession();
         if (sess.session) {
+          // Persist the chosen role server-side (respects team_seed lock).
+          try {
+            const result = await setMyRole({ data: { role: signupRole } });
+            if (result?.locked) {
+              setInfo(
+                `Your account is pre-assigned the "${result.role}" role and cannot be changed.`,
+              );
+            }
+          } catch (roleErr) {
+            console.error("setMyRole failed", roleErr);
+          }
           navigate({ to: "/" });
         } else {
-          setInfo("Account created. Check your email to confirm, then sign in.");
+          setInfo(
+            `Account created as ${signupRole === "manager" ? "Maintenance Manager" : "Maintenance Technician"}. Check your email to confirm, then sign in.`,
+          );
           setMode("signin");
         }
       } else {
