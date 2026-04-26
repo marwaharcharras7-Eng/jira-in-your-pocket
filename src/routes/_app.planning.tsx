@@ -118,7 +118,7 @@ function PlanningPage() {
         </Card>
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
-          {plans.map((p) => (
+          {plans.map((p: PreventivePlan) => (
             <PlanCard key={p.id} plan={p} onDelete={handleDelete} onToggle={handleToggle} />
           ))}
         </div>
