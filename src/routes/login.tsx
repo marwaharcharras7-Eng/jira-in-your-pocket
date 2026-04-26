@@ -1,10 +1,11 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Sparkles, Mail, Lock, Loader2, AlertCircle } from "lucide-react";
+import { Sparkles, Mail, Lock, Loader2, AlertCircle, Shield, Wrench } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { setMyRole } from "@/server/account.functions";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
