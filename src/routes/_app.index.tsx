@@ -24,6 +24,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { ScoreRing } from "@/components/ScoreRing";
+import { ExportAuditButton } from "@/components/ExportAuditButton";
 import { getDashboardData } from "@/server/jira.functions";
 
 export const Route = createFileRoute("/_app/")({
@@ -118,8 +119,11 @@ function DashboardPage() {
             {isManager ? "Team Dashboard" : "My Dashboard"}
           </h1>
         </div>
-        <div className="text-xs text-muted-foreground">
-          {data.totalIssues} {isManager ? "tickets across the team" : "tickets assigned to you"} · synced live from Jira
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="text-xs text-muted-foreground">
+            {data.totalIssues} {isManager ? "tickets across the team" : "tickets assigned to you"} · synced live from Jira
+          </div>
+          <ExportAuditButton />
         </div>
       </header>
 
@@ -253,14 +257,20 @@ function DashboardPage() {
             return (
               <div
                 key={m.name}
-                className="rounded-lg border border-border p-3 transition-all hover:border-primary/40 cursor-default"
-                style={{
-                  background: `linear-gradient(135deg, oklch(0.65 0.24 25 / ${intensity * 0.35}), oklch(0.20 0.02 262))`,
-                }}
+                className="rounded-lg border border-border bg-card p-3 transition-all hover:border-primary/40 cursor-default relative overflow-hidden"
               >
-                <div className="text-xs font-mono font-bold text-foreground">{m.name}</div>
-                <div className="text-2xl font-bold mt-1 tabular-nums">{m.open}</div>
-                <div className="text-[10px] text-muted-foreground">open · {m.high} high</div>
+                <div
+                  aria-hidden
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: `linear-gradient(135deg, oklch(0.65 0.24 25 / ${intensity * 0.28}), transparent 70%)`,
+                  }}
+                />
+                <div className="relative">
+                  <div className="text-xs font-mono font-bold text-foreground">{m.name}</div>
+                  <div className="text-2xl font-bold mt-1 tabular-nums text-foreground">{m.open}</div>
+                  <div className="text-[10px] text-muted-foreground">open · {m.high} high</div>
+                </div>
               </div>
             );
           })}

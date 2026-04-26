@@ -1,10 +1,11 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Sparkles, Mail, Lock, Loader2, AlertCircle } from "lucide-react";
+import { Sparkles, Mail, Lock, Loader2, AlertCircle, Shield, Wrench } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { setMyRole } from "@/server/account.functions";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -16,6 +17,7 @@ function LoginPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [signupRole, setSignupRole] = useState<"manager" | "technician">("technician");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -37,15 +39,31 @@ function LoginPage() {
         const { error: err } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${window.location.origin}/` },
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+            data: { selected_role: signupRole },
+          },
         });
         if (err) throw err;
         // auto-confirm enabled → session is active
         const { data: sess } = await supabase.auth.getSession();
         if (sess.session) {
+          // Persist the chosen role server-side (respects team_seed lock).
+          try {
+            const result = await setMyRole({ data: { role: signupRole } });
+            if (result?.locked) {
+              setInfo(
+                `Your account is pre-assigned the "${result.role}" role and cannot be changed.`,
+              );
+            }
+          } catch (roleErr) {
+            console.error("setMyRole failed", roleErr);
+          }
           navigate({ to: "/" });
         } else {
-          setInfo("Account created. Check your email to confirm, then sign in.");
+          setInfo(
+            `Account created as ${signupRole === "manager" ? "Maintenance Manager" : "Maintenance Technician"}. Check your email to confirm, then sign in.`,
+          );
           setMode("signin");
         }
       } else {
@@ -148,6 +166,41 @@ function LoginPage() {
                 className="w-full h-11 pl-10 pr-3 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/50"
               />
             </div>
+
+
+            {mode === "signup" && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground px-1">
+                  Choose your role
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSignupRole("technician")}
+                    className={`flex flex-col items-center justify-center gap-1.5 h-20 rounded-lg border text-xs font-medium transition-all ${
+                      signupRole === "technician"
+                        ? "border-primary bg-primary/10 text-foreground ring-2 ring-primary/30"
+                        : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                    }`}
+                  >
+                    <Wrench className="size-4" />
+                    Maintenance Technician
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSignupRole("manager")}
+                    className={`flex flex-col items-center justify-center gap-1.5 h-20 rounded-lg border text-xs font-medium transition-all ${
+                      signupRole === "manager"
+                        ? "border-primary bg-primary/10 text-foreground ring-2 ring-primary/30"
+                        : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                    }`}
+                  >
+                    <Shield className="size-4" />
+                    Maintenance Manager
+                  </button>
+                </div>
+              </div>
+            )}
 
             {mode === "signin" && (
               <div className="text-right">

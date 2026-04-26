@@ -62,6 +62,7 @@ const DEFAULT_SEARCH_FIELDS = [
   "created",
   "updated",
   "labels",
+  "duedate",
 ] as const;
 
 export async function searchIssues(
